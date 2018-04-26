@@ -6,9 +6,9 @@
   "dependencies": {},
   "devDependencies": {},
   "scripts": {
-    "test": "source env.sh && echo $AWS_ACCESS_KEY_ID",
-    "package": "source env.sh && aws s3 sync ./static s3://${S3_BUCKET_NAME} && cd src && aws cloudformation package --template-file template.yaml --output-template-file ../packaged-template.yaml --s3-bucket ${S3_BUCKET_NAME}",
-    "deploy": "source env.sh && aws cloudformation deploy --template-file packaged-template.yaml  --capabilities CAPABILITY_IAM --stack-name ${CLOUDFORMATION_STACK_NAME}"
+    "test": "source env.sh && cd src && sam local start-api",
+    "package": "source env.sh && aws s3 sync ./static s3://${S3_BUCKET_NAME} && cd src && sam package --template-file template.yaml --output-template-file ../packaged-template.yaml --s3-bucket ${S3_BUCKET_NAME}",
+    "deploy": "source env.sh && sam deploy --template-file packaged-template.yaml  --capabilities CAPABILITY_IAM --stack-name ${CLOUDFORMATION_STACK_NAME}"
   },
   "author": "",
   "license": "ISC"
