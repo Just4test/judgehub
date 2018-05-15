@@ -1,0 +1,9 @@
+name: A + B
+params:
+    - name: a
+      type: int
+      description: A
+    - name: b
+      type: int
+      description: B
+method: aplusb

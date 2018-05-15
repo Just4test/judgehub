@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters: 
+  UseCurrentS3Bucket:
+    Description: Provide this value to use current S3 bucket.
+    Default: None
+    Type: String
+Conditions: 
+  CreateStorage: !Equals [ !Ref UseCurrentS3Bucket, None ]
+
+Resources:
+  Storage:
+    Type: AWS::S3::Bucket
+    #如果不创建该s3bucket，其他使用 !Ref Storage的地方会报错。改为总是建立bucket，但如果不需要将不保留。
+    Condition: CreateStorage 
+    DeletionPolicy: Retain
+    # DeletionPolicy: !If [CreateStorage, Delete, Retain]
+    Properties:
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+
+  SubmitRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      # Path: "/"
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+      - PolicyName: s3
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            Effect: Allow
+            Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:DeleteObject
+            - s3:*
+            Resource: !Sub
+              - arn:${partition}:s3:::${bucket}/*
+              - partition: !Ref AWS::Partition
+                bucket: !If [CreateStorage, !Ref Storage, !Ref UseCurrentS3Bucket]
+      - PolicyName: judge
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            Effect: Allow
+            Action:
+            - lambda:InvokeFunction
+            Resource: '*'
+
+  JudgeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+
+  Submit:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/submit
+      Handler: submit.submit_handle
+      Runtime: python3.6
+      Timeout: 10
+      Role: !GetAtt SubmitRole.Arn
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !If [CreateStorage, !Ref Storage, !Ref UseCurrentS3Bucket]
+          JUDGE_PYTHON3: !Ref JudgePython3
+      Events:
+        GetResource:
+          Type: Api
+          Properties:
+            Path: /submit
+            Method: post
+  JudgePython3:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/judge/python3
+      Handler: judge.judge_handle
+      Runtime: python3.6
+    Events:
+      GetResource:
+        Type: Api
+        Properties:
+          Path: /judge/python3
+          Method: any

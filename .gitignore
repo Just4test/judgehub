@@ -5,3 +5,5 @@ __pycache__
 *.class
 .vscode
 /.packaged-template.yaml
+packages
+node_modules
