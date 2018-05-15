@@ -1,7 +1,8 @@
+from time import time
+_t = time()
 import sys
 import imp
 import json
-from time import time
 import io
 
 data = json.loads(input())
@@ -35,32 +36,26 @@ def run():
             'output': output,
             'stdout': stdout.read()
         })
-        
-run()
+
 start_time = time()
 try:
     run()
 except BaseException as e:
-    stdout.close()
-    sys.stdout = _stdout
-    if case_p >= 0:
-        ret['LastInput'] = case[case_p]
-    
     stdout.seek(stdout_p)
     ret = {
         'error': repr(e),
         'case_p': case_p,
         'stdout': stdout.read()
     }
+    if case_p >= 0:
+        ret['LastInput'] = testcase[case_p]
 else:
-    end_time = time()
-    stdout.close()
-    sys.stdout = _stdout
-
     ret = {
-        'runtime': end_time - start_time,
+        'runtime': time() - start_time,
         'results': results
     }
 
+stdout.close()
+sys.stdout = _stdout
 print(json.dumps(ret))
     

@@ -6,7 +6,7 @@ def judge_handle(event, context):
     print('=================!!!!!=====')
     print(type(event))
     print(event)
-    print('=================?????=====')
+    print('=================Run subprocess=====')
     
     
     proc = Popen(['python', 'run.py'], stdin=PIPE, stdout=PIPE)
@@ -19,7 +19,9 @@ def judge_handle(event, context):
         proc.kill()
         outs, errs = proc.communicate()
         
-    print(outs, errs)
+    outs = outs.decode('utf8')
+    print('=================Subprocess end=====')
+    print('OUT>>>>>>>>\n{}\nERROR>>>>>>>>\n{}'.format(outs, errs))
     
-    return json.loads(outs.decode('utf8'))
+    return json.loads(outs)
     

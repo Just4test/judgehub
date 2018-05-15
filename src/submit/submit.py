@@ -89,8 +89,10 @@ def submit_handle(event, context):
 		}
 	]
 	'''
-
-	body = yaml.safe_load(event['body'])
+	try:
+		body = yaml.safe_load(event['body'])
+	except BaseException as e:
+		return respond(ValueError('Body must be json string'))
 	if not isinstance(body, dict):
 		return respond(ValueError('Body must be json dict'))
 	code = body['code']
@@ -138,6 +140,7 @@ def submit_handle(event, context):
 			'error': result['error'],
 			'stdout': result['stdout'],
 		}
+		case_p = result['case_p']
 		if case_p >= 0:
 			ret['input'] = testcase[case_p]['input']
 			ret['expected'] = testcase[case_p]['expected']
