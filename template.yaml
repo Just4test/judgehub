@@ -92,12 +92,16 @@ Resources:
           Properties:
             Path: /submit
             Method: post
+
   JudgePython3:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./src/judge/python3
       Handler: judge.judge_handle
       Runtime: python3.6
+      MemorySize: 2048
+      Timeout: 10
+      Role: !GetAtt JudgeRole.Arn
     Events:
       GetResource:
         Type: Api

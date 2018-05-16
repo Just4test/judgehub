@@ -1,5 +1,3 @@
-from time import time
-_t = time()
 import sys
 import imp
 import json
@@ -37,7 +35,6 @@ def run():
             'stdout': stdout.read()
         })
 
-start_time = time()
 try:
     run()
 except BaseException as e:
@@ -51,7 +48,6 @@ except BaseException as e:
         ret['LastInput'] = testcase[case_p]
 else:
     ret = {
-        'runtime': time() - start_time,
         'results': results
     }
 
