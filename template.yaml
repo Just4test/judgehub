@@ -6,6 +6,10 @@ Parameters:
     Description: Provide this value to use current S3 bucket.
     Default: None
     Type: String
+  JudgeVpcCidrBlock:
+    Description: Provide 'x.y' to use 'x.y.0.0/16' run lambda.
+    Default: '10.188'
+    Type: String
 Conditions: 
   CreateStorage: !Equals [ !Ref UseCurrentS3Bucket, None ]
 
@@ -62,8 +66,6 @@ Resources:
   JudgeRole:
     Type: AWS::IAM::Role
     Properties:
-      ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -73,6 +75,48 @@ Resources:
           Principal:
             Service:
             - lambda.amazonaws.com
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+
+  JudgeVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Join ['', [!Ref JudgeVpcCidrBlock, '.0.0/16']]
+      EnableDnsSupport: false
+      EnableDnsHostnames: false
+
+  JudgeSubnet0:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref JudgeVPC
+      CidrBlock: !Join ['', [!Ref JudgeVpcCidrBlock, '.0.0/18']]
+      AvailabilityZone: !Select [0, { 'Fn::GetAZs': '' }]
+
+  JudgeSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref JudgeVPC
+      CidrBlock: !Join ['', [!Ref JudgeVpcCidrBlock, '.64.0/18']]
+      AvailabilityZone: !Select [1, { 'Fn::GetAZs': '' }]
+
+  JudgeSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref JudgeVPC
+      CidrBlock: !Join ['', [!Ref JudgeVpcCidrBlock, '.128.0/18']]
+
+  JudgeSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref JudgeVPC
+      CidrBlock: !Join ['', [!Ref JudgeVpcCidrBlock, '.192.0/18']]
+
+  JudgeSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Forbid judge lambda to access the Internet
+      VpcId: !Ref JudgeVPC
+      SecurityGroupEgress: []
 
   Submit:
     Type: AWS::Serverless::Function
@@ -80,12 +124,13 @@ Resources:
       CodeUri: ./src/submit
       Handler: submit.submit_handle
       Runtime: python3.6
-      Timeout: 10
+      Timeout: 11
       Role: !GetAtt SubmitRole.Arn
       Environment:
         Variables:
           S3_BUCKET_NAME: !If [CreateStorage, !Ref Storage, !Ref UseCurrentS3Bucket]
           JUDGE_PYTHON3: !Ref JudgePython3
+          JUDGE_NODEJS: !Ref JudgeNodeJS
       Events:
         GetResource:
           Type: Api
@@ -97,14 +142,24 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./src/judge/python3
-      Handler: judge.judge_handle
+      Handler: judge.judge_handler
       Runtime: python3.6
       MemorySize: 2048
       Timeout: 10
       Role: !GetAtt JudgeRole.Arn
-    Events:
-      GetResource:
-        Type: Api
-        Properties:
-          Path: /judge/python3
-          Method: any
+      VpcConfig:
+        SecurityGroupIds: [!Ref JudgeSecurityGroup]
+        SubnetIds: [!Ref JudgeSubnet0, !Ref JudgeSubnet1, !Ref JudgeSubnet2, !Ref JudgeSubnet3]
+
+  JudgeNodeJS:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/judge/nodejs
+      Handler: judge.judge_handler
+      Runtime: nodejs8.10
+      MemorySize: 2048
+      Timeout: 10
+      Role: !GetAtt JudgeRole.Arn
+      VpcConfig:
+        SecurityGroupIds: [!Ref JudgeSecurityGroup]
+        SubnetIds: [!Ref JudgeSubnet0, !Ref JudgeSubnet1, !Ref JudgeSubnet2, !Ref JudgeSubnet3]
