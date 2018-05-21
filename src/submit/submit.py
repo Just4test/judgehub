@@ -19,7 +19,8 @@ lambda_client = boto3.client('lambda')
 s3 = boto3.client('s3')
 S3_BUCKET_NAME = os.environ['S3_BUCKET_NAME']
 JUDGE_LAMBDA = {
-	'python3': os.environ['JUDGE_PYTHON3']
+	'python3': os.environ['JUDGE_PYTHON3'],
+	'nodejs': os.environ['JUDGE_NODEJS'],
 }
 
 def respond(err, res=None):
@@ -104,6 +105,7 @@ def submit_handle(event, context):
 
 	judge_data, testcase = create_data(problem)
 	judge_data['code'] = code
+	judge_data['timeout'] = 3000
 	payload = json.dumps(judge_data).encode('utf-8')
 	judge_lambda_name = JUDGE_LAMBDA[lang]
 	print('======= Call Judge Lambda {} ========\n{}'.format(judge_lambda_name, payload))
@@ -139,6 +141,7 @@ def submit_handle(event, context):
 			'status': 'RE',
 			'error': result['error'],
 			'stdout': result['stdout'],
+			'stderr': result.get('stderr', None),
 		}
 		case_p = result['case_p']
 		if case_p >= 0:
@@ -161,7 +164,7 @@ def submit_handle(event, context):
 		else:
 			ret = {
 				'status': 'AC',
-				'runtime': int(result['runtime'] * 1000),
+				'run_duration': int(result['run_duration']),
 			}
 		
 
