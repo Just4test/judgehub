@@ -137,16 +137,21 @@ def submit_handle(event, context):
 	'''
 	
 	if 'error' in result:
-		ret = {
-			'status': 'RE',
-			'error': result['error'],
-			'stdout': result['stdout'],
-			'stderr': result.get('stderr', None),
-		}
-		case_p = result['case_p']
-		if case_p >= 0:
-			ret['input'] = testcase[case_p]['input']
-			ret['expected'] = testcase[case_p]['expected']
+		if result['error'] == '__TLE__':
+			ret = {
+				'status': 'TLE'
+			}
+		else:
+			ret = {
+				'status': 'RE',
+				'error': result['error'],
+				'stdout': result['stdout'],
+				'stderr': result.get('stderr', None),
+			}
+			case_p = result['case_p']
+			if case_p >= 0:
+				ret['input'] = testcase[case_p]['input']
+				ret['expected'] = testcase[case_p]['expected']
 	else:
 		r = result['results']
 		for i in range(len(testcase)):

@@ -6,12 +6,13 @@ exports.judge_handler = function(event, context, callback) {
     
     function ret(result){
         n.kill('SIGINT')
+        console.log('=========================RESULT=====================\n', result)
         callback(null, result)
     } 
     
     let timeout = setTimeout(()=>{
         ret({
-            error: 'TLE'
+            error: '__TLE__'
         })
     }, event.timeout)
     let t = 0
@@ -41,7 +42,7 @@ exports.judge_handler = function(event, context, callback) {
 //    timeout: 3000,
 //    method: 'aplusb',
 //    testcase: [ [ 1, 2 ], [ 2, 2 ] ],
-//    code: 'function aplusb(a, b){\n console.log(`${a} + ${b} = ${a+b}`)\n console.error(`${a} + ${b} = ${a+b}`)\n throw \'Guck\'\n return a + b + 1\n}'
+//    code: 'function aplusb(a, b){\n console.log(`${a} + ${b} = ${a+b}`)\nwhile(true){}\n console.error(`${a} + ${b} = ${a+b}`)\n throw \'Guck\'\n return a + b + 1\n}'
 //}
 //
 //

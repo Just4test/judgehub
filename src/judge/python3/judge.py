@@ -22,6 +22,9 @@ def judge_handler(event, context):
     except TimeoutExpired:
         proc.kill()
         outs, errs = proc.communicate()
+        return {
+            'error': '__TLE__'
+        }
     outs = outs.decode('utf8')
     result = json.loads(outs)
     if t > 0:
