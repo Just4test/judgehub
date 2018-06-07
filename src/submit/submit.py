@@ -72,13 +72,22 @@ def download(problem):
 
 
 def submit_handle(event, context):
-	if 'headers' not in event or 'Content-Type' not in event['headers'] or 'application/json' not in event['headers']['Content-Type']:
+	def get_header(key):
+		if 'headers' not in event:
+			return None
+		key = key.lower()
+		for k, v in event['headers'].items():
+			if k.lower() == key:
+				return v
+		return None
+	content_type = get_header('Content-Type')
+	if content_type is None or 'application/json' not in content_type:
 		return respond(ValueError('Must provide json as body.'))
 
 	'''
 	# metadata
 	{
-		lang: python3
+		runtime: python3
 		problem_id: 1
 		code: //todo
 	}
@@ -98,16 +107,16 @@ def submit_handle(event, context):
 		return respond(ValueError('Body must be json dict'))
 	code = body['code']
 	problem = body['problem_id']
-	lang = body['lang']
-	if not isinstance(code, str) or not isinstance(problem, str) or not isinstance(lang, str):
-		return respond(ValueError('Body must contain lang/problem_id/code'))
+	runtime = body['runtime']
+	if not isinstance(code, str) or not isinstance(problem, str) or not isinstance(runtime, str):
+		return respond(ValueError('Body must contain runtime/problem_id/code'))
 		
 
 	judge_data, testcase = create_data(problem)
 	judge_data['code'] = code
 	judge_data['timeout'] = 3000
 	payload = json.dumps(judge_data).encode('utf-8')
-	judge_lambda_name = JUDGE_LAMBDA[lang]
+	judge_lambda_name = JUDGE_LAMBDA[runtime]
 	print('======= Call Judge Lambda {} ========\n{}'.format(judge_lambda_name, payload))
 	temp = lambda_client.invoke(
 		FunctionName=judge_lambda_name,
