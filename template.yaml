@@ -16,7 +16,6 @@ Conditions:
 Resources:
   Storage:
     Type: AWS::S3::Bucket
-    #如果不创建该s3bucket，其他使用 !Ref Storage的地方会报错。改为总是建立bucket，但如果不需要将不保留。
     Condition: CreateStorage 
     DeletionPolicy: Retain
     # DeletionPolicy: !If [CreateStorage, Delete, Retain]
@@ -104,6 +103,7 @@ Resources:
     Properties:
       VpcId: !Ref JudgeVPC
       CidrBlock: !Join ['', [!Ref JudgeVpcCidrBlock, '.128.0/18']]
+      AvailabilityZone: !Select [2, { 'Fn::GetAZs': '' }]
 
   JudgeSubnet3:
     Type: AWS::EC2::Subnet
@@ -131,11 +131,12 @@ Resources:
           S3_BUCKET_NAME: !If [CreateStorage, !Ref Storage, !Ref UseCurrentS3Bucket]
           JUDGE_PYTHON3: !Ref JudgePython3
           JUDGE_NODEJS: !Ref JudgeNodeJS
+          JUDGE_NODEJS_VER: !Join [',', [!GetAtt JudgeNodeJSVer0.Version, !GetAtt JudgeNodeJSVer1.Version]]
       Events:
         GetResource:
           Type: Api
           Properties:
-            Path: /submit
+            Path: /api/submit
             Method: post
 
   JudgePython3:
@@ -163,3 +164,14 @@ Resources:
       VpcConfig:
         SecurityGroupIds: [!Ref JudgeSecurityGroup]
         SubnetIds: [!Ref JudgeSubnet0, !Ref JudgeSubnet1, !Ref JudgeSubnet2, !Ref JudgeSubnet3]
+
+  JudgeNodeJSVer0:
+    Type: "AWS::Lambda::Version"
+    Properties: 
+      FunctionName: !Ref JudgeNodeJS
+      Description: "A test version of MyFunction"
+  JudgeNodeJSVer1:
+    Type: "AWS::Lambda::Version"
+    Properties: 
+      FunctionName: !Ref JudgeNodeJS
+      Description: "B test version of MyFunction"
