@@ -121,9 +121,9 @@ Resources:
   Submit:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./src/submit
+      CodeUri: ./lambda/api/submit
       Handler: submit.submit_handle
-      Runtime: python3.6
+      Runtime: python3.7
       Timeout: 11
       Role: !GetAtt SubmitRole.Arn
       Environment:
@@ -142,9 +142,9 @@ Resources:
   JudgePython3:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./src/judge/python3
+      CodeUri: ./lambda/tools/judge/python3
       Handler: judge.judge_handler
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: 2048
       Timeout: 10
       Role: !GetAtt JudgeRole.Arn
@@ -155,7 +155,7 @@ Resources:
   JudgeNodeJS:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./src/judge/nodejs
+      CodeUri: ./lambda/tools/judge/nodejs
       Handler: judge.judge_handler
       Runtime: nodejs8.10
       MemorySize: 2048
