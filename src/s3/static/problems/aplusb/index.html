@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <style>
+    div, label, ul, li {margin: 0; padding: 0;}
+    li {list-style: none;}
+    .clearfix:after {content:" "; display:block; height:0; clear:both; visibility:hidden}
+    .clearfix {*zoom: 1;}
+
+    /* 设置包裹层宽高 */
+    .wrapper {position: relative; min-width: 600px; max-width: 1000px; margin: 0 auto 50px; padding: 0 10px;}
+
+    #description {padding-bottom: 10px; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc;}
+    pre {padding: 10px; border: 1px solid #ccc ; border-radius: 3px; background-color: #f5f5f5;}
+    #lang {margin: 8px; padding: 6px; width: 180px; border: 1px solid #ccc; border-radius: 5px;}
+    #sel_wrap {position: absolute; z-index: 100; width: 180px; height: 25px; margin: 15px 0 8px; padding: 3px 15px 3px 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; cursor: pointer;}
+    #sel_wrap .select {display: inline-block; width: 100%; height: 100%; line-height: 25px; cursor: pointer;}
+    #sel_wrap .triangle {display: inline-block; position: absolute; top: 12px; right: 6px; border: 6px solid transparent; border-top: 6px solid #777; border-radius: 3px;}
+    #sel_wrap .triangle.active { transform: rotate(-180deg); transform-origin: 5px 3px;}
+    #sel_wrap .sel_con {display: none; position: absolute; top: 34px; left: 0; right: 0; border: 1px solid #ccc; border-radius: 3px; background-color: #fff; box-shadow: 0px 2px 8px 3px #eee;}
+    #sel_wrap .option {height: 30px; line-height: 30px; box-sizing: border-box; padding: 0 8px;}
+    #sel_wrap .option.active {background-color: #eee;}
+    #sel_wrap .sel_con.show {display: block;}
+
+    #editor {margin-top: 55px; width:100%; height:600px; border:1px solid #ccc;}
+
+    .btn_wrap {margin-top: 15px;}
+    .btn_wrap .submit {float: right; display: inline-block; width: 100px; height: 30px; border-radius: 15px; background-color: #7ba9d0; border: 1px solid #78a0c4; color: #fff; line-height: 30px;
+      text-align: center; font-size: 14px; cursor: pointer;}
+
+    #result_wrap {display: none; margin-top: 15px;}
+    #result_wrap .title {font-size: 16px;}
+    #result_wrap .title .result {color: #d95451;}
+    #result_wrap .title .loading_img {display: none; margin-left: 15px; vertical-align: bottom;}
+    #result_wrap .result_con {width: 100%; padding: 0 20px 20px; margin-top: 10px; box-sizing: border-box; border: 1px solid #d4a1a0; border-radius: 5px;}
+    #result_wrap .result_con li {display: flex; align-items: center; position: relative; width: 100%; min-height: 50px; border-bottom: 1px solid #f1cecc; color: #b25150; font-size: 15px;}
+    #result_wrap .result_con li .name {float: left; width: 140px;}
+    #result_wrap .result_con .data {float: left; margin: 8px 0; font-size: 13px; color: #d05451; white-space: pre;}
+    #result_wrap .result_con .input_data {color: #000;}
+    #result_wrap .result_con .output_data {color: #d05451;}
+    #result_wrap .result_con .expected_data {color: #449d44;}
+    #result_wrap .title .result.success {color: #449d44;}
+
+    #result_wrap .result_success {border-color: #449d44;}
+    #result_wrap .result_success li {border-color: #449d44; color: #449d44;}
+    #result_wrap .result_success .data {color: #449d44;}
+  </style>
+</head>
+<body>
+
+  <div class="wrapper">
+    <h3>题目描述</h3>
+    <div id="description">
+      <p>For given numbers a and b in function aplusb, return the sum of them.</p>
+      <p>Example:</p>
+      <pre><code>a = 1, b = 2
+return 3
+      </code></pre>
+    </div>
+
+    <div id="sel_wrap">
+      <label type="text" class="select">javascript</label>
+      <i class="triangle"></i>
+      <ul class="sel_con">
+        <li class="option active" data-index="0">javascript</li>
+        <li class="option" data-index="1">python</li>
+      </ul>
+    </div>
+
+    <div id="editor"></div>
+
+    <div class="btn_wrap clearfix">
+      <span class="submit">提交解答</span>
+    </div>
+
+    <div id="result_wrap">
+      <div class="title">
+        <label>提交结果：</label>
+        <span class="result"></span>
+        <span class="submit_loading"><img src="./imgs/loading.gif" class="loading_img" width="17"></span>
+      </div>
+      <ul class="result_con">
+      </ul>
+    </div>
+  </div>
+
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+  <script src="../.monaco-editor/min/vs/loader.js"></script>
+  <script>
+
+    window.onresize = function () {
+      if (editor) {
+        editor.layout();
+      }
+    };
+
+    $(document).on('click', function() {
+      $('#sel_wrap .sel_con').removeClass('show');
+      $('#sel_wrap .triangle').removeClass('active');
+    })
+
+    $('#sel_wrap').on('click', function(){
+      $('#sel_wrap .sel_con').toggleClass('show');
+      $('#sel_wrap .triangle').toggleClass('active');
+      return false;
+    })
+
+
+    var editor = null;
+    var selectedIndex = 0;
+    require.config({ paths: { 'vs': '../.monaco-editor/min/vs' }});
+    require(['vs/editor/editor.main'], function () {
+
+      getModes(function (modes) {
+        loadCode(modes[selectedIndex]);
+
+        $('#sel_wrap').on('click', '.option', function() {
+          $this = $(this);
+          $this.addClass('active').siblings('li').removeClass('active');
+          if ($this.data('index') != selectedIndex) {
+            selectedIndex = $this.data('index');
+            $('#sel_wrap .select').text(modes[selectedIndex]['modeId']);
+            loadCode(modes[selectedIndex]);
+          }
+        })
+
+        $('.submit').on('click', function () {
+          $('#result_wrap').show();
+          $('#result_wrap .result').removeClass('success').text('运行中');
+          $('.loading_img').show();
+          $('.result_con').hide();
+          getCodeResult(modes[selectedIndex].lang, 'a-plus-b', editor.getValue());
+        })
+      })
+
+      // var modes = [
+      //   {
+      //     lang: 'javascript',
+      //     modeId: 'javascript',
+      //     sampleCode: [
+      //       'function x() {',
+      //       '\tconsole.log("Hello world!");',
+      //       '}'
+      //     ].join('\n')
+      //   },
+      //   {
+      //     lang: 'python3',
+      //     modeId: 'python',
+      //     sampleCode: [
+      //       "class Solution:",
+      //       "\tdef aplusb(self, a, b):",
+      //       "\t\tprint('{} + {} = {}'.format(a, b, a+b))",
+      //       "\t\treturn a + b + 1"
+      //     ].join('\n')
+      //   }
+      // ]
+
+    });
+
+    // 加载code编辑器
+    function loadCode(mode) {
+      if (!editor) {
+        $('#editor').empty();
+        editor = monaco.editor.create($('#editor')[0], {
+          value: mode.sampleCode,
+          language: mode.modeId
+        });
+      } else {
+        var oldModel = editor.getModel();
+        var newModel = monaco.editor.createModel(mode.sampleCode, mode.modeId);
+        editor.setModel(newModel);
+        if (oldModel) {
+          oldModel.dispose();
+        }
+      }
+
+    }
+
+    // 获取运行结果
+    function getCodeResult(runtime, problem_id, code) {
+      var startTime = Date.now();
+      $('.result_con').empty();
+      $.ajax({
+        type: 'post',
+        url: '/api/submit',
+        data: JSON.stringify({
+          runtime: runtime,
+          problem_id: problem_id,
+          code: code
+        }),
+        contentType: 'application/json',
+        error: function (err) {
+          if (err) {
+            $('#result_wrap .result').removeClass('success').text('获取结果失败');
+            $('.loading_img').hide();
+          };
+        }
+      }).done(function (data) {
+
+        if (data.status == 'WA' || data.status == 'RE') {
+          $('#result_wrap .result').removeClass('success').text('解答错误');
+          $('.result_con').show().removeClass('result_success');
+          data.input && $('.result_con').append('<li>'+
+            '<p class="name">输入：</p><span class="data input_data">'+JSON.stringify(data.input)+'</span>'+
+          '</li>');
+          data.output && $('.result_con').append('<li>'+
+            '<p class="name">输出：</p><span class="data output_data">'+JSON.stringify(data.output)+'</span>'+
+          '</li>');
+          data.expected && $('.result_con').append('<li>'+
+            '<p class="name">预期：</p><span class="data expected_data">'+JSON.stringify(data.expected)+'</span>'+
+          '</li>');
+          data.stdout && $('.result_con').append('<li>'+
+            '<p class="name">标准输出：</p><span class="data expected_data">'+data.stdout+'</span>'+
+          '</li>');
+          data.error && $('.result_con').append('<li>'+
+            '<p class="name">执行错误信息：</p><span class="data">'+JSON.stringify(data.error)+'</span>'+
+          '</li>')
+        }
+        if (data.status == 'AC') {
+          $('#result_wrap .result').addClass('success').text('通过');
+          $('.result_con').show().addClass('result_success').append('<li>'+
+            '<p class="name">运行时间：</p><span class="data">'+(data.run_duration)+'ms</span>'+
+          '</li>');
+        }
+        if (data.status == 'RE') {
+          $('#result_wrap .result').text('执行出错');
+        }
+        $('.loading_img').hide();
+      })
+    }
+
+    // 获取语言信息列表
+    function getModes(fn) {
+      console.log('!!!!!!!!!!!!!!')
+      $.ajax({
+        type: 'get',
+        url: './get_modes',
+        error: function (err) {
+        console.log('!!!!!!!!!!!!!!1111111')
+        console.log(err)
+        }
+      }).done(function (data) {
+        // console.log(data);
+        console.log('!!!!!!!!!!!!!!222222')
+        fn(JSON.parse(data))
+      })
+    }
+
+  </script>
+</body>
+</html>

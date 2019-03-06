@@ -1,0 +1,13 @@
+[{
+	"modeId": "NodeJS",
+  "lang": "nodejs",
+  "sampleUrl": "./code_examples/test.js"
+}, {
+  "modeId": "Python 3",
+  "lang": "python3",
+  "sampleUrl": "./code_examples/test.py"
+}, {
+  "modeId": "Python 2",
+  "lang": "python2",
+  "sampleUrl": "./code_examples/test.py"
+}]

@@ -1,0 +1,1 @@
+[{"lang":"nodejs","modeId":"javascript","sampleCode":"function aplusb(a, b) {\r\n\tconsole.log(`${a} + ${b} = ${a+b}`);\r\n\treturn a + b + 1\r\n}\r\n"},{"lang":"python3","modeId":"python","sampleCode":"class Solution:\n\tdef aplusb(self, a, b):\n\t\tprint('{} + {} = {}'.format(a, b, a+b))\n\t\t#raise Exception('Error!!!!')\n\t\t#return a + b\n\t\treturn a + b + 1\n"}]
