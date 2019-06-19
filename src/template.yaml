@@ -7,8 +7,8 @@ Parameters:
     Default: None
     Type: String
   JudgeVpcCidrBlock:
-    Description: Provide 'x.y' to use 'x.y.0.0/16' run lambda.
-    Default: '10.188'
+    Description: Provide a /16 CIDR block to run lambda.
+    Default: '10.188.0.0/16'
     Type: String
 Conditions: 
   CreateStorage: !Equals [ !Ref UseCurrentS3Bucket, None ]
@@ -50,9 +50,8 @@ Resources:
             - s3:DeleteObject
             - s3:*
             Resource: !Sub
-              - arn:${partition}:s3:::${bucket}/*
-              - partition: !Ref AWS::Partition
-                bucket: !If [CreateStorage, !Ref Storage, !Ref UseCurrentS3Bucket]
+              - arn:${AWS::Partition}:s3:::${bucket}/*
+              - bucket: !If [CreateStorage, !Ref Storage, !Ref UseCurrentS3Bucket]
       - PolicyName: judge
         PolicyDocument:
           Version: '2012-10-17'
@@ -80,7 +79,7 @@ Resources:
   JudgeVPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Join ['', [!Ref JudgeVpcCidrBlock, '.0.0/16']]
+      CidrBlock: !Ref JudgeVpcCidrBlock
       EnableDnsSupport: false
       EnableDnsHostnames: false
 
@@ -88,28 +87,28 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref JudgeVPC
-      CidrBlock: !Join ['', [!Ref JudgeVpcCidrBlock, '.0.0/18']]
+      CidrBlock: !Select [0, !Cidr [!Ref JudgeVpcCidrBlock, 4, 10]]
       AvailabilityZone: !Select [0, { 'Fn::GetAZs': '' }]
 
   JudgeSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref JudgeVPC
-      CidrBlock: !Join ['', [!Ref JudgeVpcCidrBlock, '.64.0/18']]
+      CidrBlock: !Select [1, !Cidr [!Ref JudgeVpcCidrBlock, 4, 10]]
       AvailabilityZone: !Select [1, { 'Fn::GetAZs': '' }]
 
   JudgeSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref JudgeVPC
-      CidrBlock: !Join ['', [!Ref JudgeVpcCidrBlock, '.128.0/18']]
+      CidrBlock: !Select [2, !Cidr [!Ref JudgeVpcCidrBlock, 4, 10]]
       AvailabilityZone: !Select [2, { 'Fn::GetAZs': '' }]
 
   JudgeSubnet3:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref JudgeVPC
-      CidrBlock: !Join ['', [!Ref JudgeVpcCidrBlock, '.192.0/18']]
+      CidrBlock: !Select [3, !Cidr [!Ref JudgeVpcCidrBlock, 4, 10]]
 
   JudgeSecurityGroup:
     Type: AWS::EC2::SecurityGroup
