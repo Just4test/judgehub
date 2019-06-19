@@ -37,9 +37,9 @@ def respond(err, res=None):
 def create_data(problem):
 	download(problem)
 	
-	with open('/tmp/problems/{}/metadata.yaml'.format(problem)) as f:
+	with open(f'/tmp/problems/{problem}/metadata.yaml') as f:
 		metadata = yaml.load(f)
-	with open('/tmp/problems/{}/testcase.yaml'.format(problem)) as f:
+	with open(f'/tmp/problems/{problem}/testcase.yaml') as f:
 		testcase = yaml.load(f)
 		
 	judge_data = {
@@ -51,9 +51,9 @@ def create_data(problem):
 	
 	
 def download(problem):
-	path = Path('/tmp/problems/{}'.format(problem))
+	path = Path(f'/tmp/problems/{problem}')
 	if os.path.isdir(path):
-		print('Path {} already created.'.format(path))
+		print(f'Path {path} already created.')
 	else:
 		path.mkdir(parents=True)
 	
@@ -64,11 +64,11 @@ def download(problem):
 			s3.download_file(S3_BUCKET_NAME, path, to)
 		except botocore.exceptions.ClientError as e:
 			if e.response['Error']['Code'] == "404":
-				print('Object "{}" does not exist on s3.'.format(path))
+				print(f'Object "{path}" does not exist on s3.')
 			else:
 				raise
-	down('data/problems/{}/metadata.yaml'.format(problem), '/tmp/problems/{}/metadata.yaml'.format(problem))
-	down('data/problems/{}/testcase.yaml'.format(problem), '/tmp/problems/{}/testcase.yaml'.format(problem))
+	down(f'data/problems/{problem}/metadata.yaml', f'/tmp/problems/{problem}/metadata.yaml')
+	down(f'data/problems/{problem}/testcase.yaml', f'/tmp/problems/{problem}/testcase.yaml')
 
 
 def submit_handle(event, context):
@@ -117,14 +117,14 @@ def submit_handle(event, context):
 	judge_data['timeout'] = 3000
 	payload = json.dumps(judge_data).encode('utf-8')
 	judge_lambda_name = JUDGE_LAMBDA[runtime]
-	print('======= Call Judge Lambda {} ========\n{}'.format(judge_lambda_name, payload))
+	print(f'======= Call Judge Lambda {judge_lambda_name} ========\n{payload}')
 	temp = lambda_client.invoke(
 		FunctionName=judge_lambda_name,
 		Payload=payload
 	)
 
 	result = json.loads(temp['Payload'].read().decode('utf8'))
-	print('======= Judge Lambda Return ========\n{}\n===================================='.format(result))
+	print(f'======= Judge Lambda Return ========\n{result}\n====================================')
 
 	'''
 	# Normal exit
